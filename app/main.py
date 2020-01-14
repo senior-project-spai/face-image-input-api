@@ -29,9 +29,12 @@ def startup_event():
                                      user=os.getenv('MYSQL_USER'),
                                      passwd=os.getenv('MYSQL_PASSWORD'),
                                      db=os.getenv('MYSQL_DB'))
-    kafka_producer = KafkaProducer(bootstrap_server=['{0}:{1}'.format(
+    kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(
         os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
 
+@app.on_event('shutdown')
+def shutdown_event():
+    sql_connection.close()
 
 @app.post("/_api/face")
 def face_image_input(image: UploadFile = File(...),  # ... = required
