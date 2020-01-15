@@ -32,9 +32,11 @@ def startup_event():
     kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(
         os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
 
+
 @app.on_event('shutdown')
 def shutdown_event():
     sql_connection.close()
+
 
 @app.post("/_api/face")
 def face_image_input(image: UploadFile = File(...),  # ... = required
@@ -57,7 +59,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     bucket_name = os.getenv('S3_BUCKET')
     bucket = s3_resource.Bucket(bucket_name)
     bucket.upload_fileobj(image.file, image_name)
-    image_s3_uri = 's3://{0}/{1}'.format(bucket_name, image_name)
+    image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
+    print(image_s3_uri)
 
     # Insert data to SQL
     sql_connection.ping(reconnect=True)
