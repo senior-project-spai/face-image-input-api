@@ -62,7 +62,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     # Insert data to SQL
     sql_connection.ping(reconnect=True)
     image_id = None
-    with connection.cursor() as cursor:
+    with sql_connection.cursor() as cursor:
         insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `time`, `position_top`, `position_right`, `position_bottom`, `position_left`) "
                       "VALUES (%(image_path), %(camera_id), %(branch_id), %(time), %(position_top), %(position_right), %(position_bottom), %(position_left))")
         cursor.execute(insert_sql, {'image_path': image_s3_uri,
