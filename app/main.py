@@ -63,6 +63,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     bucket = s3_resource.Bucket(bucket_name)
     bucket.upload_fileobj(image.file, image_name)
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
+    return { 'name': image_s3_uri}
     logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Insert data to SQL
