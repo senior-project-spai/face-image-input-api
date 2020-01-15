@@ -15,8 +15,9 @@ from kafka import KafkaProducer
 from json import dumps
 
 import os  # environment variable
-import logging
 
+# logging
+import logging
 logger = logging.getLogger("api")
 
 app = FastAPI()
@@ -63,14 +64,13 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     bucket = s3_resource.Bucket(bucket_name)
     bucket.upload_fileobj(image.file, image_name)
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
-    return { 'name': image_s3_uri}
     logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Insert data to SQL
     sql_connection.ping(reconnect=True)
     image_id = None
     with sql_connection.cursor() as cursor:
-        insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `time` `position_top`, `position_right`, `position_bottom`, `position_left`) "
+        insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `time`, `position_top`, `position_right`, `position_bottom`, `position_left`) "
                       "VALUES ('%(image_path)s', %(camera_id)s, %(branch_id)s, %(time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s)")
         cursor.execute(insert_sql, {'image_path': image_s3_uri,
                                     'camera_id': camera_id,
