@@ -41,6 +41,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      image_name: str = Form(...),
                      branch_id: int = Form(...),
                      camera_id: int = Form(...),
+                     time: int = Form(...),
                      position_top: int = Form(None),  # None = not required
                      position_right: int = Form(None),
                      position_bottom: int = Form(None),
@@ -67,6 +68,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
         cursor.execute(insert_sql, {'image_path': image_s3_uri,
                                     'camera_id': camera_id,
                                     'branch_id': branch_id,
+                                    'time': time,
                                     'position_top': position_top,
                                     'position_right': position_right,
                                     'position_bottom': position_bottom,
