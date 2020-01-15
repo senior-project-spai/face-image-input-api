@@ -56,7 +56,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                  config=Config(signature_version='s3v4'))
     bucket_name = os.getenv('S3_BUCKET')
     bucket = s3_resource.Bucket(bucket_name)
-    bucket.upload_fileobj(image, image_name)
+    bucket.upload_fileobj(image.file, image_name)
     image_s3_uri = 's3://{0}/{1}'.format(bucket_name, image_name)
 
     # Insert data to SQL
