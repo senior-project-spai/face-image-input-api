@@ -1,6 +1,7 @@
 # FastAPI
 from fastapi import FastAPI, File, Form, UploadFile
 from starlette.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 # SQL
 import pymysql
@@ -42,7 +43,10 @@ def shutdown_event():
     sql_connection.close()
 
 
-@app.post("/_api/face")
+class FaceImageInputResponseModel(BaseModel):
+    face_image_id: int
+
+@app.post("/_api/face", response_model=FaceImageInputResponseModel)
 def face_image_input(image: UploadFile = File(...),  # ... = required
                      image_name: str = Form(...),
                      branch_id: int = Form(...),
