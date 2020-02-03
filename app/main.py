@@ -33,11 +33,6 @@ def startup_event():
         os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
 
 
-@app.on_event('shutdown')
-def shutdown_event():
-    sql_connection.close()
-
-
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
 
