@@ -28,12 +28,7 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
 @app.on_event('startup')
 def startup_event():
-    global sql_connection, kafka_producer
-    sql_connection = pymysql.connect(host=os.getenv('MYSQL_HOST'),
-                                     port=int(os.getenv('MYSQL_PORT')),
-                                     user=os.getenv('MYSQL_USER'),
-                                     passwd=os.getenv('MYSQL_PASSWORD'),
-                                     db=os.getenv('MYSQL_DB'))
+    global kafka_producer
     kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(
         os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
 
@@ -71,7 +66,11 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Insert data to SQL
-    sql_connection.ping(reconnect=True)
+    sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
+                                     port=int(os.getenv('MYSQL_MASTER_PORT')),
+                                     user=os.getenv('MYSQL_MASTER_USER'),
+                                     passwd=os.getenv('MYSQL_MASTER_PASSWORD'),
+                                     db=os.getenv('MYSQL_MASTER_DB'))
     image_id = None
     with sql_connection.cursor() as cursor:
         insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `time`, `position_top`, `position_right`, `position_bottom`, `position_left`) "
@@ -86,7 +85,6 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                     'position_left': position_left})
         sql_connection.commit()  # commit changes
         image_id = cursor.lastrowid  # get last inserted row id
-
     # Send data to Kafka
     obj = {'face_image_id': image_id,
            'face_image_path': image_s3_uri,
@@ -96,6 +94,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
            'position_left': position_left}
     kafka_producer.send(os.getenv('KAFKA_TOPIC_FACE_IMAGE'),
                         value=dumps(obj).encode(encoding='UTF-8'))
-
+    
+    sql_connection.close()
     # Return ID to response
     return {'face_image_id': image_id}
