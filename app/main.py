@@ -69,7 +69,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
                                      port=int(os.getenv('MYSQL_MASTER_PORT')),
                                      user=os.getenv('MYSQL_MASTER_USER'),
-                                     passwd=os.getenv('MYSQL_MASTER_PASSWORD'),
+                                     passwd=os.getenv('MYSQL_MASTER_PASS'),
                                      db=os.getenv('MYSQL_MASTER_DB'))
     image_id = None
     with sql_connection.cursor() as cursor:
