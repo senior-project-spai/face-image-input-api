@@ -41,7 +41,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      image_name: str = Form(...),
                      branch_id: int = Form(...),
                      camera_id: int = Form(...),
-                     time: int = Form(...),
+                     time: float = Form(...),
                      position_top: int = Form(None),  # None = not required
                      position_right: int = Form(None),
                      position_bottom: int = Form(None),
