@@ -26,13 +26,6 @@ app = FastAPI()
 app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
 
-@app.on_event('startup')
-def startup_event():
-    global kafka_producer
-    kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(
-        os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
-
-
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
 
@@ -87,6 +80,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
            'position_right': position_right,
            'position_bottom': position_bottom,
            'position_left': position_left}
+    
+    kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
     kafka_producer.send(os.getenv('KAFKA_TOPIC_FACE_IMAGE'),
                         value=dumps(obj).encode(encoding='UTF-8'))
     
