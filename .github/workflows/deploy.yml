@@ -1,0 +1,28 @@
+name: Deploy to Openshift
+on:
+  push:
+    branches:    
+    - master 
+jobs:
+  deploy:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v1
+    - name: Try to new-app and expose new services
+      uses: redhat-developer/openshift-actions@v1.1
+      with:
+        version: '3.11.36'
+        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER_URL }}
+        parameters: '{"username": "${{ secrets.OPENSHIFT_USERNAME }}", "password": "${{ secrets.OPENSHIFT_PASSWORD }}", "acceptUntrustedCerts": "true"}'
+        cmd: |          
+          'new-app https://github.com/${{github.REPOSITORY}} --name ${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}}'
+          'expose svc/${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}}'
+      continue-on-error: true
+    - name: Trigger Build
+      uses: redhat-developer/openshift-actions@v1.1
+      with:
+        version: '3.11.36'
+        openshift_server_url: ${{ secrets.OPENSHIFT_SERVER_URL }}
+        parameters: '{"username": "${{ secrets.OPENSHIFT_USERNAME }}", "password": "${{ secrets.OPENSHIFT_PASSWORD }}", "acceptUntrustedCerts": "true"}'
+        cmd: |          
+          'start-build ${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}} '
