@@ -47,6 +47,10 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                      passwd=os.getenv('MYSQL_MASTER_PASS'),
                                      db=os.getenv('MYSQL_MASTER_DB'))
     image_id = None
+    
+    bucket_name = os.getenv('S3_BUCKET')
+    image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
+    
     with sql_connection.cursor() as cursor:
         insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `time`, `position_top`, `position_right`, `position_bottom`, `position_left`) "
                       "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s)")
@@ -69,10 +73,9 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                  aws_secret_access_key=os.getenv(
                                      'S3_SECRET_KEY'),
                                  config=Config(signature_version='s3v4'))
-    bucket_name = os.getenv('S3_BUCKET')
+    
     bucket = s3_resource.Bucket(bucket_name)
     bucket.upload_fileobj(image.file, image_name)
-    image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
     logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Send data to Kafka
