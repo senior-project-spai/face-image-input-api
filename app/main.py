@@ -21,7 +21,7 @@ import os  # environment variable
 import logging
 
 # import time
-import time
+import time as time1
 
 logger = logging.getLogger("api")
 
@@ -55,7 +55,6 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
 
     bucket_name = os.getenv('S3_BUCKET')
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
-    req_time = int(round(time.time() * 1000))/1000
     with sql_connection.cursor() as cursor:
         insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
                       "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(image_time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s, %(time)s)")
@@ -67,7 +66,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                     'position_right': position_right,
                                     'position_bottom': position_bottom,
                                     'position_left': position_left,
-                                    'time': req_time})
+                                    'time': int(round(time1.time() * 1000))/1000})
         sql_connection.commit()  # commit changes
         image_id = cursor.lastrowid  # get last inserted row id
     sql_connection.close()
