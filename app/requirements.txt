@@ -3,3 +3,4 @@ python-multipart
 PyMySQL
 boto3
 kafka-python
+TorMySQL
