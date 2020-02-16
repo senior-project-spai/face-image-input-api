@@ -1,6 +1,5 @@
 fastapi
 python-multipart
 pymysql
-aiobotocore
 aioboto3
 kafka-python
