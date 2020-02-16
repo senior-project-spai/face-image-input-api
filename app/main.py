@@ -72,15 +72,15 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     sql_connection.close()
 
     # Upload image to S3
-    with boto3.resource('s3',
-                        endpoint_url=os.getenv('S3_ENDPOINT'),
-                        aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-                        aws_secret_access_key=os.getenv(
-                            'S3_SECRET_KEY'),
-                        config=Config(signature_version='s3v4')) as s3_resource:
-        bucket = s3_resource.Bucket(bucket_name)
-        bucket.upload_fileobj(image.file, image_name)
-        logger.debug("image_s3_uri = {}".format(image_s3_uri))
+    s3_resource = boto3.resource('s3',
+                                 endpoint_url=os.getenv('S3_ENDPOINT'),
+                                 aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+                                 aws_secret_access_key=os.getenv(
+                                     'S3_SECRET_KEY'),
+                                 config=Config(signature_version='s3v4'))
+    bucket = s3_resource.Bucket(bucket_name)
+    bucket.upload_fileobj(image.file, image_name)
+    logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Send data to Kafka
     obj = {'face_image_id': image_id,
