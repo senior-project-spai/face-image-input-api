@@ -1,5 +1,5 @@
 fastapi
 python-multipart
-tormysql
+pymysql
 boto3
 kafka-python
