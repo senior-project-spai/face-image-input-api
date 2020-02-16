@@ -7,9 +7,9 @@ from pydantic import BaseModel
 import pymysql
 
 # S3
-import aioboto3
-from aiobotocore import UNSIGNED
-from aiobotocore.client import Config
+import boto3
+from botocore import UNSIGNED
+from botocore.client import Config
 
 # Kafka
 from kafka import KafkaProducer
@@ -30,7 +30,7 @@ class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
 
 @app.post("/_api/face", response_model=FaceImageInputResponseModel)
-async def face_image_input(image: UploadFile = File(...),  # ... = required
+def face_image_input(image: UploadFile = File(...),  # ... = required
                      image_name: str = Form(...),
                      branch_id: int = Form(...),
                      camera_id: int = Form(...),
@@ -67,14 +67,14 @@ async def face_image_input(image: UploadFile = File(...),  # ... = required
     sql_connection.close()
     
     # Upload image to S3
-    async with aioboto3.resource('s3',
+    with aioboto3.resource('s3',
                                  endpoint_url=os.getenv('S3_ENDPOINT'),
                                  aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
                                  aws_secret_access_key=os.getenv(
                                      'S3_SECRET_KEY'),
                                  config=Config(signature_version='s3v4')) as s3_resource:
         bucket = s3_resource.Bucket(bucket_name)
-        await bucket.upload_fileobj(image.file, image_name)
+        bucket.upload_fileobj(image.file, image_name)
         logger.debug("image_s3_uri = {}".format(image_s3_uri))
 
     # Send data to Kafka
