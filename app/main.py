@@ -4,7 +4,7 @@ from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # SQL
-import mysql.connector
+import mysql.connector.pooling
 
 # S3
 import boto3
@@ -76,7 +76,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                     'position_left': position_left,
                                     'time': int(round(time1.time() * 1000))/1000})
         sql_connection.commit()  # commit changes
-        image_id = cursor.lastrowid  # get last inserted row id
+        image_id = cursor.lastrowid 
+        cursor.close() # get last inserted row id
     # sql_connection.close()
     sql_connection.close()
     # Upload image to S3
