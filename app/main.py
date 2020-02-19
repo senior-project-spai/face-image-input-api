@@ -37,7 +37,7 @@ config = {
     'database': os.getenv('MYSQL_MASTER_DB')
 }
 
-pool = mysql.connector.connect(pool_name="mypool",
+pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
                                pool_size=2,
                                **config)
 
