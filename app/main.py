@@ -35,6 +35,7 @@ pool = None
 
 @app.on_event("startup")
 def startup_event():
+    global pool
     pool = Pool(
         host=os.getenv('MYSQL_MASTER_HOST'),
         port=int(os.getenv('MYSQL_MASTER_PORT')),
