@@ -36,10 +36,15 @@ config = {
     'password': os.getenv('MYSQL_MASTER_PASS'),
     'database': os.getenv('MYSQL_MASTER_DB')
 }
+pool = None
 
-pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
-                               pool_size=2,
-                               **config)
+
+@app.on_event("startup")
+async def startup_event():
+    global pool
+    pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
+                                                       pool_size=2,
+                                                       **config)
 
 
 class FaceImageInputResponseModel(BaseModel):
@@ -76,8 +81,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                     'position_left': position_left,
                                     'time': int(round(time1.time() * 1000))/1000})
         sql_connection.commit()  # commit changes
-        image_id = cursor.lastrowid 
-        cursor.close() # get last inserted row id
+        image_id = cursor.lastrowid
+        cursor.close()  # get last inserted row id
     # sql_connection.close()
     sql_connection.close()
     # Upload image to S3
