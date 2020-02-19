@@ -29,26 +29,19 @@ app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
-config = {
-    'host': os.getenv('MYSQL_MASTER_HOST'),
-    'port': int(os.getenv('MYSQL_MASTER_PORT')),
-    'user': os.getenv('MYSQL_MASTER_USER'),
-    'password': os.getenv('MYSQL_MASTER_PASS'),
-    'database': os.getenv('MYSQL_MASTER_DB')
-}
-pool = None
 
+pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
+                                                    pool_size=2,
+                                                    host='mqsql-svc-weave.apps.spai.ml',
+                                                    port=32307,
+                                                    database='cashier',
+                                                    user='root',
+                                                    password='1q2w3e4r'
+                                                    )
+print("Printing connection pool properties ")
+print("Connection Pool Name - ", pool.pool_name)
+print("Connection Pool Size - ", pool.pool_size)
 
-@app.on_event("startup")
-async def startup_event():
-    global pool
-    pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
-                                    pool_size=2,
-                                    **config)
-
-    print ("Printing connection pool properties ")
-    print("Connection Pool Name - ", pool.pool_name)
-    print("Connection Pool Size - ", pool.pool_size)
 
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
@@ -65,29 +58,37 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      position_bottom: int = Form(None),
                      position_left: int = Form(None)):
 
+    global pool
+    captured_pool = pool
+
     # Insert data to SQL
-    sql_connection = pool.get_connection()
+    sql_connection = captured_pool.get_connection()
     image_id = None
 
     bucket_name = os.getenv('S3_BUCKET')
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
-    cursor = sql_connection.cursor()
-    insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
+
+    if sql_connection.is_connected():
+        cursor = sql_connection.cursor()
+        insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
                     "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(image_time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s, %(time)s)")
-    cursor.execute(insert_sql, {'image_path': image_s3_uri,
-                                'camera_id': camera_id,
-                                'branch_id': branch_id,
-                                'image_time': time,
-                                'position_top': position_top,
-                                'position_right': position_right,
-                                'position_bottom': position_bottom,
-                                'position_left': position_left,
-                                'time': int(round(time1.time() * 1000))/1000})
-    sql_connection.commit()  # commit changes
-    image_id = cursor.lastrowid
-    cursor.close()  # get last inserted row id
-    # sql_connection.close()
-    sql_connection.close()
+        cursor.execute(insert_sql, {'image_path': image_s3_uri,
+                                    'camera_id': camera_id,
+                                    'branch_id': branch_id,
+                                    'image_time': time,
+                                    'position_top': position_top,
+                                    'position_right': position_right,
+                                    'position_bottom': position_bottom,
+                                    'position_left': position_left,
+                                    'time': int(round(time1.time() * 1000))/1000})
+        # sql_connection.commit()  # commit changes
+        image_id = cursor.lastrowid
+        print(image_id)
+    if sql_connection.is_connected():
+        print(sql_connection)
+        cursor.close()  
+        sql_connection.close()
+
     # Upload image to S3
     s3_resource = boto3.resource('s3',
                                  endpoint_url=os.getenv('S3_ENDPOINT'),
