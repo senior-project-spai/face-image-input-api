@@ -1,5 +1,6 @@
 # FastAPI
 from fastapi import FastAPI, File, Form, UploadFile
+from fastapi import BackgroundTasks
 from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
@@ -35,7 +36,8 @@ class FaceImageInputResponseModel(BaseModel):
 
 
 @app.post("/_api/face", response_model=FaceImageInputResponseModel)
-def face_image_input(image: UploadFile = File(...),  # ... = required
+def face_image_input(background_tasks: BackgroundTasks,
+                     image: UploadFile = File(...),  # ... = required
                      image_name: str = Form(...),
                      branch_id: int = Form(...),
                      camera_id: int = Form(...),
@@ -43,7 +45,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      position_top: int = Form(None),  # None = not required
                      position_right: int = Form(None),
                      position_bottom: int = Form(None),
-                     position_left: int = Form(None)):
+                     position_left: int = Form(None),
+                     ):
 
     # Insert data to SQL
     sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
@@ -71,17 +74,6 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
         image_id = cursor.lastrowid  # get last inserted row id
     sql_connection.close()
 
-    # Upload image to S3
-    s3_resource = boto3.resource('s3',
-                                 endpoint_url=os.getenv('S3_ENDPOINT'),
-                                 aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
-                                 aws_secret_access_key=os.getenv(
-                                     'S3_SECRET_KEY'),
-                                 config=Config(signature_version='s3v4'))
-    bucket = s3_resource.Bucket(bucket_name)
-    bucket.upload_fileobj(image.file, image_name)
-    logger.debug("image_s3_uri = {}".format(image_s3_uri))
-
     # Send data to Kafka
     obj = {'face_image_id': image_id,
            'face_image_path': image_s3_uri,
@@ -90,10 +82,28 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
            'position_bottom': position_bottom,
            'position_left': position_left}
 
+    background_tasks.add_task(
+        upload_to_s3, bucket_name, image.file, image_name, image_s3_uri)
+    background_tasks.add_task(add_message_to_kafka, obj)
+    # Return ID to response
+    return {'face_image_id': image_id}
+
+
+def add_message_to_kafka(obj):
     kafka_producer = KafkaProducer(bootstrap_servers=['{0}:{1}'.format(
         os.getenv('KAFKA_HOST'), os.getenv('KAFKA_PORT'))])
     kafka_producer.send(os.getenv('KAFKA_TOPIC_FACE_IMAGE'),
                         value=dumps(obj).encode(encoding='UTF-8'))
 
-    # Return ID to response
-    return {'face_image_id': image_id}
+
+def upload_to_s3(bucket_name, image_file, image_name, image_s3_uri):
+    # Upload image to S3
+    s3_resource = boto3.resource('s3',
+                                 endpoint_url=os.getenv('S3_ENDPOINT'),
+                                 aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+                                 aws_secret_access_key=os.getenv(
+                                     'S3_SECRET_KEY'),
+                                 config=Config(signature_version='s3v4'))
+    bucket = s3_resource.Bucket(bucket_name)
+    bucket.upload_fileobj(image_file, image_name)
+    logger.debug("image_s3_uri = {}".format(image_s3_uri))
