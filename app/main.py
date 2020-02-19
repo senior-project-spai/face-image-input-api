@@ -38,7 +38,7 @@ config = {
 }
 
 pool = mysql.connector.connect(pool_name="mypool",
-                               pool_size=30,
+                               pool_size=3,
                                **config)
 
 
