@@ -1,6 +1,6 @@
 fastapi
 python-multipart
-pymysql
-pymysqlpool
+# pymysql
 boto3
 kafka-python
+mysql-connector-python

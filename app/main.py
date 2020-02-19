@@ -4,8 +4,8 @@ from starlette.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 # SQL
-import pymysql
-import pymysqlpool
+import mysql.connector
+
 # S3
 import boto3
 from botocore import UNSIGNED
@@ -29,8 +29,6 @@ app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
-pool = None
-
 config = {
     'host': os.getenv('MYSQL_MASTER_HOST'),
     'port': int(os.getenv('MYSQL_MASTER_PORT')),
@@ -39,18 +37,9 @@ config = {
     'database': os.getenv('MYSQL_MASTER_DB')
 }
 
-
-@app.on_event("startup")
-def startup_event():
-    global pool
-    pool = pymysqlpool.ConnectionPool(name='pool', **config)
-    # pool = Pool(
-    #     host=os.getenv('MYSQL_MASTER_HOST'),
-    #     port=int(os.getenv('MYSQL_MASTER_PORT')),
-    #     user=os.getenv('MYSQL_MASTER_USER'),
-    #     password=os.getenv('MYSQL_MASTER_PASS'),
-    #     db=os.getenv('MYSQL_MASTER_DB'))
-    # pool.init()
+pool = mysql.connector.connect(pool_name="mypool",
+                               pool_size=30,
+                               **config)
 
 
 class FaceImageInputResponseModel(BaseModel):
