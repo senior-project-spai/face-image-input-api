@@ -96,6 +96,6 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
     kafka_producer.send(os.getenv('KAFKA_TOPIC_FACE_IMAGE'),
                         value=dumps(obj).encode(encoding='UTF-8'))
     finish_time = time1.time()
-    logger.info(req_arrive_time,sql_start_time,s3_start_time,s3_finish_time,finish_time)
+    print(req_arrive_time,sql_start_time,s3_start_time,s3_finish_time,finish_time)
     # Return ID to response
     return {'face_image_id': image_id}
