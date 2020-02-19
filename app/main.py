@@ -43,9 +43,12 @@ pool = None
 async def startup_event():
     global pool
     pool = mysql.connector.pooling.MySQLConnectionPool(pool_name="mypool",
-                                                       pool_size=2,
-                                                       **config)
+                                    pool_size=2,
+                                    **config)
 
+    print ("Printing connection pool properties ")
+    print("Connection Pool Name - ", pool.pool_name)
+    print("Connection Pool Size - ", pool.pool_size)
 
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
@@ -68,21 +71,21 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
 
     bucket_name = os.getenv('S3_BUCKET')
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
-    with sql_connection.cursor() as cursor:
-        insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
-                      "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(image_time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s, %(time)s)")
-        cursor.execute(insert_sql, {'image_path': image_s3_uri,
-                                    'camera_id': camera_id,
-                                    'branch_id': branch_id,
-                                    'image_time': time,
-                                    'position_top': position_top,
-                                    'position_right': position_right,
-                                    'position_bottom': position_bottom,
-                                    'position_left': position_left,
-                                    'time': int(round(time1.time() * 1000))/1000})
-        sql_connection.commit()  # commit changes
-        image_id = cursor.lastrowid
-        cursor.close()  # get last inserted row id
+    cursor = sql_connection.cursor()
+    insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
+                    "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(image_time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s, %(time)s)")
+    cursor.execute(insert_sql, {'image_path': image_s3_uri,
+                                'camera_id': camera_id,
+                                'branch_id': branch_id,
+                                'image_time': time,
+                                'position_top': position_top,
+                                'position_right': position_right,
+                                'position_bottom': position_bottom,
+                                'position_left': position_left,
+                                'time': int(round(time1.time() * 1000))/1000})
+    sql_connection.commit()  # commit changes
+    image_id = cursor.lastrowid
+    cursor.close()  # get last inserted row id
     # sql_connection.close()
     sql_connection.close()
     # Upload image to S3
