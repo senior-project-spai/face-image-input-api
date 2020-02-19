@@ -47,7 +47,8 @@ def face_image_input(background_tasks: BackgroundTasks,
                      position_bottom: int = Form(None),
                      position_left: int = Form(None),
                      ):
-
+    req_arrive_time = time1.time()
+    
     # Insert data to SQL
     sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
                                      port=int(os.getenv('MYSQL_MASTER_PORT')),
@@ -58,6 +59,9 @@ def face_image_input(background_tasks: BackgroundTasks,
 
     bucket_name = os.getenv('S3_BUCKET')
     image_s3_uri = "s3://{0}/{1}".format(bucket_name, image_name)
+
+    sql_start_time = time1.time()
+
     with sql_connection.cursor() as cursor:
         insert_sql = ("INSERT INTO `FaceImage` (`image_path`, `camera_id`, `branch_id`, `image_time`, `position_top`, `position_right`, `position_bottom`, `position_left`, `time`) "
                       "VALUES (%(image_path)s, %(camera_id)s, %(branch_id)s, %(image_time)s, %(position_top)s, %(position_right)s, %(position_bottom)s, %(position_left)s, %(time)s)")
@@ -74,7 +78,8 @@ def face_image_input(background_tasks: BackgroundTasks,
         image_id = cursor.lastrowid  # get last inserted row id
     sql_connection.close()
 
-    # Send data to Kafka
+    finish_sql_time = time1.time()
+
     obj = {'face_image_id': image_id,
            'face_image_path': image_s3_uri,
            'position_top': position_top,
@@ -85,6 +90,9 @@ def face_image_input(background_tasks: BackgroundTasks,
     background_tasks.add_task(
         upload_to_s3, bucket_name, image.file, image_name, image_s3_uri)
     background_tasks.add_task(add_message_to_kafka, obj)
+
+    return_time = time1.time()
+    print(req_arrive_time, sql_start_time, finish_sql_time, return_time)
     # Return ID to response
     return {'face_image_id': image_id}
 
