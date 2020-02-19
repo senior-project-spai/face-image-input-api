@@ -5,8 +5,7 @@ from pydantic import BaseModel
 
 # SQL
 import pymysql
-from pymysqlpool.pool import Pool
-
+import pymysqlpool
 # S3
 import boto3
 from botocore import UNSIGNED
@@ -32,17 +31,26 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
 pool = None
 
+config = {
+    'host': os.getenv('MYSQL_MASTER_HOST'),
+    'port': int(os.getenv('MYSQL_MASTER_PORT')),
+    'user': os.getenv('MYSQL_MASTER_USER'),
+    'password': os.getenv('MYSQL_MASTER_PASS'),
+    'database': os.getenv('MYSQL_MASTER_DB')
+}
+
 
 @app.on_event("startup")
 def startup_event():
     global pool
-    pool = Pool(
-        host=os.getenv('MYSQL_MASTER_HOST'),
-        port=int(os.getenv('MYSQL_MASTER_PORT')),
-        user=os.getenv('MYSQL_MASTER_USER'),
-        password=os.getenv('MYSQL_MASTER_PASS'),
-        db=os.getenv('MYSQL_MASTER_DB'))
-    pool.init()
+    pool = pymysqlpool.ConnectionPool(name='pool', **config)
+    # pool = Pool(
+    #     host=os.getenv('MYSQL_MASTER_HOST'),
+    #     port=int(os.getenv('MYSQL_MASTER_PORT')),
+    #     user=os.getenv('MYSQL_MASTER_USER'),
+    #     password=os.getenv('MYSQL_MASTER_PASS'),
+    #     db=os.getenv('MYSQL_MASTER_DB'))
+    # pool.init()
 
 
 class FaceImageInputResponseModel(BaseModel):
@@ -61,7 +69,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      position_left: int = Form(None)):
 
     # Insert data to SQL
-    sql_connection = pool.get_conn()
+    sql_connection = pool.get_connection()
     image_id = None
 
     bucket_name = os.getenv('S3_BUCKET')
@@ -81,11 +89,12 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
         sql_connection.commit()  # commit changes
         image_id = cursor.lastrowid  # get last inserted row id
     # sql_connection.close()
-    pool.release(sql_connection)
+    sql_connection.close()
     # Upload image to S3
     s3_resource = boto3.resource('s3',
                                  endpoint_url=os.getenv('S3_ENDPOINT'),
-                                 aws_access_key_id=os.getenv('S3_ACCESS_KEY'),
+                                 aws_access_key_id=os.getenv(
+                                     'S3_ACCESS_KEY'),
                                  aws_secret_access_key=os.getenv(
                                      'S3_SECRET_KEY'),
                                  config=Config(signature_version='s3v4'))
