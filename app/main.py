@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 # SQL
 import pymysql
+from pymysqlpool.pool import Pool
 
 # S3
 import boto3
@@ -29,6 +30,19 @@ app = FastAPI()
 
 app.add_middleware(CORSMiddleware, allow_origins=['*'])
 
+pool = None
+
+
+@app.on_event("startup")
+def startup_event():
+    pool = Pool(
+        host=os.getenv('MYSQL_MASTER_HOST'),
+        port=int(os.getenv('MYSQL_MASTER_PORT')),
+        user=os.getenv('MYSQL_MASTER_USER'),
+        password=os.getenv('MYSQL_MASTER_PASS'),
+        db=os.getenv('MYSQL_MASTER_DB'))
+    pool.init()
+
 
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
@@ -46,11 +60,7 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                      position_left: int = Form(None)):
 
     # Insert data to SQL
-    sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
-                                     port=int(os.getenv('MYSQL_MASTER_PORT')),
-                                     user=os.getenv('MYSQL_MASTER_USER'),
-                                     passwd=os.getenv('MYSQL_MASTER_PASS'),
-                                     db=os.getenv('MYSQL_MASTER_DB'))
+    sql_connection = pool.get_conn()
     image_id = None
 
     bucket_name = os.getenv('S3_BUCKET')
@@ -69,8 +79,8 @@ def face_image_input(image: UploadFile = File(...),  # ... = required
                                     'time': int(round(time1.time() * 1000))/1000})
         sql_connection.commit()  # commit changes
         image_id = cursor.lastrowid  # get last inserted row id
-    sql_connection.close()
-
+    # sql_connection.close()
+    pool.release(sql_connection)
     # Upload image to S3
     s3_resource = boto3.resource('s3',
                                  endpoint_url=os.getenv('S3_ENDPOINT'),

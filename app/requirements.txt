@@ -1,5 +1,6 @@
 fastapi
 python-multipart
 pymysql
+pymysql-pooling
 boto3
 kafka-python
