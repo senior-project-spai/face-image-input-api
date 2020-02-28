@@ -16,6 +16,7 @@ jobs:
         parameters: '{"username": "${{ secrets.OPENSHIFT_USERNAME }}", "password": "${{ secrets.OPENSHIFT_PASSWORD }}", "acceptUntrustedCerts": "true"}'
         cmd: |          
           'new-app https://github.com/${{github.REPOSITORY}} --name ${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}}'
+          'wait --for=condition=available dc/${{secrets.OPENSHIFT_APPLICATION_NAME}} --timeout=120s'
           'expose svc/${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}}'
       continue-on-error: true
     - name: Trigger Build
@@ -25,4 +26,4 @@ jobs:
         openshift_server_url: ${{ secrets.OPENSHIFT_SERVER_URL }}
         parameters: '{"username": "${{ secrets.OPENSHIFT_USERNAME }}", "password": "${{ secrets.OPENSHIFT_PASSWORD }}", "acceptUntrustedCerts": "true"}'
         cmd: |          
-          'start-build ${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}} '
+          'start-build ${{secrets.OPENSHIFT_APPLICATION_NAME}} -n ${{secrets.OPENSHIFT_PROJECT}} --wait'
