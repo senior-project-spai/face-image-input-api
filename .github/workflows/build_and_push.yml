@@ -2,7 +2,7 @@ name: Build Image and Push to Github Package
 on:
   push:
     branches:
-    - master
+    - '*'
 jobs:
   build:
     runs-on: ubuntu-latest
