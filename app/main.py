@@ -34,7 +34,6 @@ app.add_middleware(CORSMiddleware, allow_origins=['*'])
 class FaceImageInputResponseModel(BaseModel):
     face_image_id: int
 
-
 @app.post("/_api/face", response_model=FaceImageInputResponseModel)
 def face_image_input(background_tasks: BackgroundTasks,
                      image: UploadFile = File(...),  # ... = required
