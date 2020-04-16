@@ -10,28 +10,57 @@ spec:
     port: 80
   selector:
     app: face-image-input-api
-  type: NodePort
+  type: LoadBalancer
 ---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  creationTimestamp: null
   labels:
     app: face-image-input-api
   name: face-image-input-api
 spec:
-  replicas: 1
+  replicas: 10
   selector:
     matchLabels:
-      app: face-image-input-api
-  strategy: {}
+        app: face-image-input-api
   template:
     metadata:
-      creationTimestamp: null
       labels:
         app: face-image-input-api
     spec:
       containers:
-      - image: supakornbabe/spai-face-image-input-api:dev-c97e0f2
-        name: spai-face-image-input-api
-        resources: {}
+        - env:
+            - name: S3_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  key: bucket-face-image
+                  name: s3-bucket
+            - name: KAFKA_TOPIC_FACE_IMAGE
+              valueFrom:
+                configMapKeyRef:
+                  key: KAFKA_TOPIC_FACE_IMAGE_INPUT
+                  name: kafka-topic
+            - name: LOG_LEVEL
+              value: debug
+          envFrom:
+            - configMapRef:
+                name: mysql-master-connections
+            - configMapRef:
+                name: kafka-endpoint
+            - configMapRef:
+                name: s3-endpoint
+            - configMapRef:
+                name: s3-key
+          image: supakornbabe/spai-face-image-input-api:dev-b9f62f3
+          imagePullPolicy: Always
+          name: face-image-input-api
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
