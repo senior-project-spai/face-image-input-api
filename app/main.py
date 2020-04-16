@@ -50,11 +50,11 @@ def face_image_input(background_tasks: BackgroundTasks,
     req_arrive_time = time1.time()
     
     # Insert data to SQL
-    sql_connection = pymysql.connect(host=os.getenv('MYSQL_MASTER_HOST'),
-                                     port=int(os.getenv('MYSQL_MASTER_PORT')),
-                                     user=os.getenv('MYSQL_MASTER_USER'),
-                                     passwd=os.getenv('MYSQL_MASTER_PASS'),
-                                     db=os.getenv('MYSQL_MASTER_DB'))
+    sql_connection = pymysql.connect(host=os.getenv('MYSQL_HOST'),
+                                     port=int(os.getenv('MYSQL_PORT')),
+                                     user=os.getenv('MYSQL_USER'),
+                                     passwd=os.getenv('MYSQL_PASS'),
+                                     db=os.getenv('MYSQL_DB'))
     image_id = None
 
     bucket_name = os.getenv('S3_BUCKET')
