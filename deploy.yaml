@@ -44,7 +44,7 @@ spec:
               value: debug
           envFrom:
             - configMapRef:
-                name: mysql-connections
+                name: mysql-master-connections
             - configMapRef:
                 name: kafka-endpoint
             - configMapRef:
