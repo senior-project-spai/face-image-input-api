@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: face-image-input-api-service
+  name: face-image-input-api
   labels:
     app: face-image-input-api
 spec:
